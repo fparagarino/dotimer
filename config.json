@@ -1,0 +1,11 @@
+{
+  "hotkey": "f9",
+  "intervals": [
+    { "first": 240, "every": 120, "voice": "Rune spawning" },
+    { "every": 300, "voice": "Five minutes have passed" }
+  ],
+  "cues": [
+    { "at": "05:30", "voice": "Switch sides" },
+    { "at": "20:00", "voice": "Final round" }
+  ]
+}
