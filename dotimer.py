@@ -10,10 +10,18 @@ with open(f"{name}.json") as f:
 speech_queue = queue.Queue()
 
 def speech_worker():
-    engine = pyttsx3.init()
+    try:
+        engine = pyttsx3.init()
+    except Exception as e:
+        print(f"  TTS error: {e}")
+        return
     while True:
-        engine.say(speech_queue.get())
-        engine.runAndWait()
+        text = speech_queue.get()
+        try:
+            engine.say(text)
+            engine.runAndWait()
+        except Exception as e:
+            print(f"  TTS error: {e}")
 
 threading.Thread(target=speech_worker, daemon=True).start()
 
