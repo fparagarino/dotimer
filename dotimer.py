@@ -1,8 +1,9 @@
-import json, time, threading, queue
+import json, time, threading, queue, sys
 import pyttsx3
 from pynput import keyboard
 
-with open("config.json") as f:
+name = sys.argv[1] if len(sys.argv) > 1 else "config"
+with open(f"{name}.json") as f:
     config = json.load(f)
 
 # Speech - single thread owns the engine
