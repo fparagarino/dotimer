@@ -97,6 +97,7 @@ def main():
         print(f"  Waiting for {hotkey_name}...")
         hotkey_event.clear()
         hotkey_event.wait()
+        listener.stop()
 
         running = True
         run_timer(start)
