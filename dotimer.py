@@ -84,32 +84,22 @@ def main():
     hotkey_name = config.get("hotkey", "f9").upper()
 
     print(f"\n  DoTimer")
-    print(f"  {len(config.get('timers', []))} timers loaded")
     print(f"  Hotkey: {hotkey_name}\n")
 
     try:
-        while True:
-            raw = input("  Start time [00:00]: ").strip()
-            try:
-                start = parse_time(raw) if raw else 0
-            except ValueError as e:
-                print(f"  {e}")
-                continue
+        raw = input("  Start time [00:00]: ").strip()
+        try:
+            start = parse_time(raw) if raw else 0
+        except ValueError as e:
+            print(f"  {e}")
+            return
 
-            print(f"  Waiting for {hotkey_name}...")
-            hotkey_event.clear()
-            hotkey_event.wait()
+        print(f"  Waiting for {hotkey_name}...")
+        hotkey_event.clear()
+        hotkey_event.wait()
 
-            running = True
-            t = threading.Thread(target=run_timer, args=(start,), daemon=True)
-            t.start()
-
-            hotkey_event.clear()
-            hotkey_event.wait()
-
-            running = False
-            t.join()
-            print(f"\n  Stopped.\n")
+        running = True
+        run_timer(start)
     except KeyboardInterrupt:
         running = False
         print("\n  Bye.")
