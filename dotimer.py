@@ -73,6 +73,7 @@ def run_timer(start):
             current += 1
             for t in timers:
                 if current > 0 and should_fire(current, t):
+                    print(f"\r  [{format_time(current)}] {t['voice']}                ")
                     speech_queue.put(t["voice"])
         print(f"\r  Running: {format_time(current)}  ", end="", flush=True)
 
