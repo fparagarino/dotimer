@@ -49,17 +49,20 @@ listener.start()
 # Timer
 running = False
 
-def should_fire_interval(current, iv):
-    first = iv.get("first", iv["every"])
-    every = iv["every"]
-    return current >= first and (current - first) % every == 0
+def should_fire(current, t):
+    if current < t.get("first", 0):
+        return False
+    if "last" in t and current > t["last"]:
+        return False
+    if "at" in t and current == parse_time(t["at"]):
+        return True
+    if "every" in t and current % t["every"] == 0:
+        return True
+    return False
 
 def run_timer(start):
     global running
-    cues = {parse_time(c["at"]): c["voice"] for c in config.get("cues", [])}
-    intervals = config.get("intervals", [])
-    fired_cues = {t for t in cues if t < start}
-
+    timers = config.get("timers", [])
     current = start - 1
     ref = time.time()
 
@@ -68,12 +71,9 @@ def run_timer(start):
         new_current = start + int(time.time() - ref)
         while current < new_current:
             current += 1
-            for iv in intervals:
-                if current > 0 and should_fire_interval(current, iv):
-                    speech_queue.put(iv["voice"])
-            if current in cues and current not in fired_cues:
-                fired_cues.add(current)
-                speech_queue.put(cues[current])
+            for t in timers:
+                if current > 0 and should_fire(current, t):
+                    speech_queue.put(t["voice"])
         print(f"\r  Running: {format_time(current)}  ", end="", flush=True)
 
 
@@ -82,7 +82,7 @@ def main():
     hotkey_name = config.get("hotkey", "f9").upper()
 
     print(f"\n  DoTimer")
-    print(f"  {len(config.get('intervals', []))} intervals, {len(config.get('cues', []))} cues")
+    print(f"  {len(config.get('timers', []))} timers loaded")
     print(f"  Hotkey: {hotkey_name}\n")
 
     try:
