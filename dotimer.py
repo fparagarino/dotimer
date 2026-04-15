@@ -1,25 +1,23 @@
-import json, time, threading, queue, sys
-import pyttsx3
+import json, time, threading, queue, sys, subprocess
 from pynput import keyboard
 
 name = sys.argv[1] if len(sys.argv) > 1 else "config"
 with open(f"{name}.json") as f:
     config = json.load(f)
 
-# Speech - single thread owns the engine
+# Speech - uses Windows SAPI5 directly
 speech_queue = queue.Queue()
 
 def speech_worker():
-    try:
-        engine = pyttsx3.init()
-    except Exception as e:
-        print(f"  TTS error: {e}")
-        return
     while True:
         text = speech_queue.get()
         try:
-            engine.say(text)
-            engine.runAndWait()
+            safe = text.replace("'", "''")
+            subprocess.run(
+                ["powershell", "-Command",
+                 f"(New-Object -ComObject SAPI.SpVoice).Speak('{safe}')"],
+                creationflags=0x08000000
+            )
         except Exception as e:
             print(f"  TTS error: {e}")
 

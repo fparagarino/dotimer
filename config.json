@@ -1,18 +1,7 @@
 {
   "hotkey": "f9",
   "timers": [
-    { "first": 120, "last": 240, "every": 120, "voice": "Water Rune" },
-    { "every": 240, "voice": "Bounty Rune" },
-    { "first": 360, "every": 120, "voice": "Power Rune" },
-    { "first": 180, "every": 180, "voice": "Lotus Pool" },
-    { "first": 420, "every": 420, "voice": "Wisdom Shrine" },
-    { "every": 300, "voice": "Day Night" },
-    { "at": "00:00", "voice": "Game Start" },
-    { "at": "15:00", "voice": "Roshan Active" },
-    { "at": "15:00", "voice": "Tormentor Spawn" },
-    { "at": "15:00", "voice": "Aghanim Shard Available" },
-    { "at": "30:00", "voice": "Neutral Level 3" },
-    { "at": "30:00", "voice": "Siege Creep Plus One" },
-    { "at": "35:00", "voice": "Great Lotus" }
+    { "every": 300, "voice": "Five minutes" },
+    { "at": "15:00", "voice": "Fifteen minutes" }
   ]
 }
