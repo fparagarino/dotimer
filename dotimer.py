@@ -1,9 +1,19 @@
-import json, time, threading, queue, sys, subprocess
-from pynput import keyboard
+import json, time, threading, queue, sys, subprocess, msvcrt
 
 name = sys.argv[1] if len(sys.argv) > 1 else "config"
 with open(f"{name}.json") as f:
     config = json.load(f)
+
+
+def parse_time(s):
+    parts = s.strip().split(":")
+    if len(parts) != 2 or not all(p.isdigit() for p in parts):
+        raise ValueError(f"Invalid time format: '{s}' (expected MM:SS)")
+    return int(parts[0]) * 60 + int(parts[1])
+
+for t in config.get("timers", []):
+    if "at" in t:
+        t["at"] = parse_time(t["at"])
 
 # Speech - uses Windows SAPI5 directly
 speech_queue = queue.Queue()
@@ -24,56 +34,65 @@ def speech_worker():
 threading.Thread(target=speech_worker, daemon=True).start()
 
 
-def parse_time(s):
-    parts = s.strip().split(":")
-    if len(parts) != 2 or not all(p.isdigit() for p in parts):
-        raise ValueError(f"Invalid time format: '{s}' (expected MM:SS)")
-    return int(parts[0]) * 60 + int(parts[1])
-
 def format_time(secs):
     m, s = divmod(int(secs), 60)
     return f"{m:02d}:{s:02d}"
 
 
-# Hotkey
-def get_hotkey(name):
-    if hasattr(keyboard.Key, name.lower()):
-        return getattr(keyboard.Key, name.lower())
-    return keyboard.KeyCode.from_char(name)
+def input_time(prompt):
+    digits = ['', '', '', '']
+    pos = 0
 
-target_key = get_hotkey(config.get("hotkey", "f9"))
-hotkey_event = threading.Event()
+    def redraw():
+        shown = [d if d else '_' for d in digits]
+        sys.stdout.write("\r" + prompt + f"{shown[0]}{shown[1]}:{shown[2]}{shown[3]}")
+        cursor_x = pos + (1 if pos >= 2 else 0)
+        back = 5 - cursor_x
+        if back > 0:
+            sys.stdout.write("\b" * back)
+        sys.stdout.flush()
 
-def on_press(key):
-    if key == target_key:
-        hotkey_event.set()
+    redraw()
+    while True:
+        ch = msvcrt.getwch()
+        if ch == '\r':
+            break
+        if ch == '\x03':
+            raise KeyboardInterrupt
+        if ch in ('\b', '\x7f'):
+            if pos > 0:
+                pos -= 1
+                digits[pos] = ''
+                redraw()
+        elif ch.isdigit() and pos < 4:
+            digits[pos] = ch
+            pos += 1
+            redraw()
 
-listener = keyboard.Listener(on_press=on_press)
-listener.daemon = True
-listener.start()
+    print()
+    mm = int((digits[0] or '0') + (digits[1] or '0'))
+    ss = int((digits[2] or '0') + (digits[3] or '0'))
+    return mm * 60 + ss
 
 
 # Timer
-running = False
-
 def should_fire(current, t):
     if current < t.get("first", 0):
         return False
     if "last" in t and current > t["last"]:
         return False
-    if "at" in t and current == parse_time(t["at"]):
+    if "at" in t and current == t["at"]:
         return True
     if "every" in t and current % t["every"] == 0:
         return True
     return False
 
 def run_timer(start):
-    global running
     timers = config.get("timers", [])
     current = start - 1
     ref = time.time()
 
-    while running:
+    while True:
         time.sleep(0.05)
         new_current = start + int(time.time() - ref)
         while current < new_current:
@@ -86,29 +105,12 @@ def run_timer(start):
 
 
 def main():
-    global running
-    hotkey_name = config.get("hotkey", "f9").upper()
-
-    print(f"\n  DoTimer")
-    print(f"  Hotkey: {hotkey_name}\n")
+    print("\n  DoTimer\n")
 
     try:
-        raw = input("  Start time [00:00]: ").strip()
-        try:
-            start = parse_time(raw) if raw else 0
-        except ValueError as e:
-            print(f"  {e}")
-            return
-
-        print(f"  Waiting for {hotkey_name}...")
-        hotkey_event.clear()
-        hotkey_event.wait()
-        listener.stop()
-
-        running = True
+        start = input_time("  Start time: ")
         run_timer(start)
     except KeyboardInterrupt:
-        running = False
         print("\n  Bye.")
 
 if __name__ == "__main__":
