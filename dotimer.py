@@ -17,6 +17,7 @@ for t in config.get("timers", []):
 
 # Speech - uses Windows SAPI5 directly
 speech_queue = queue.Queue()
+rate = config.get("rate", 3)
 
 def speech_worker():
     while True:
@@ -25,7 +26,7 @@ def speech_worker():
             safe = text.replace("'", "''")
             subprocess.run(
                 ["powershell", "-Command",
-                 f"(New-Object -ComObject SAPI.SpVoice).Speak('{safe}')"],
+                 f"$v=New-Object -ComObject SAPI.SpVoice;$v.Rate={rate};$v.Speak('{safe}')"],
                 creationflags=0x08000000
             )
         except Exception as e:
@@ -83,7 +84,7 @@ def should_fire(current, t):
         return False
     if "at" in t and current == t["at"]:
         return True
-    if "every" in t and current % t["every"] == 0:
+    if "every" in t and current > 0 and current % t["every"] == 0:
         return True
     return False
 
@@ -98,7 +99,7 @@ def run_timer(start):
         while current < new_current:
             current += 1
             for t in timers:
-                if current > 0 and should_fire(current, t):
+                if should_fire(current, t):
                     print(f"\r  [{format_time(current)}] {t['voice']}                ")
                     speech_queue.put(t["voice"])
         print(f"\r  Running: {format_time(current)}  ", end="", flush=True)
