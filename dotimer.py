@@ -102,6 +102,12 @@ def run_timer(start):
                 if should_fire(current, t):
                     print(f"\r  [{format_time(current)}] {t['voice']}                ")
                     speech_queue.put(t["voice"])
+                notify = t.get("notify")
+                if notify and should_fire(current + notify, t):
+                    unit = "second" if notify == 1 else "seconds"
+                    msg = f"{t['voice']} in {notify} {unit}"
+                    print(f"\r  [{format_time(current)}] {msg}                ")
+                    speech_queue.put(msg)
         print(f"\r  Running: {format_time(current)}  ", end="", flush=True)
 
 
