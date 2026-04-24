@@ -1,0 +1,27 @@
+{
+  "timers": [
+    { "at": "00:00", "voice": "Game Start" },
+
+    { "first": 120, "last": 240, "every": 120, "voice": "Water Rune" },
+    { "every": 240, "voice": "Bounty Rune" },
+    { "first": 360, "every": 120, "voice": "Power Rune" },
+
+    { "first": 180, "every": 180, "voice": "Lotus Pool" },
+    { "first": 420, "every": 420, "voice": "Wisdom Shrine" },
+
+    { "every": 300, "voice": "Day Night" },
+
+    { "at": "15:00", "voice": "Tormentor Spawn" },
+    { "at": "15:00", "voice": "Aghanim Shard Available" },
+
+    { "at": "07:00", "voice": "Neutral Tier 1" },
+    { "at": "17:00", "voice": "Neutral Tier 2" },
+    { "at": "27:00", "voice": "Neutral Tier 3" },
+    { "at": "37:00", "voice": "Neutral Tier 4" },
+    { "at": "60:00", "voice": "Neutral Tier 5" },
+
+    { "first": 50, "every": 60, "voice": "Stack", notify: 15},
+    { "first": 14, "every": 60, "voice": "Pull Small", notify: 15 },
+    { "first": 44, "every": 60, "voice": "Pull Hard", notify: 15 }
+  ]
+}
