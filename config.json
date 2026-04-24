@@ -1,6 +1,0 @@
-{
-  "timers": [
-    { "every": 300, "voice": "Five minutes" },
-    { "at": "15:00", "voice": "Fifteen minutes" }
-  ]
-}

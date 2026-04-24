@@ -21,7 +21,6 @@
     { "at": "30:00", "voice": "Neutral Tier 5" },
 
     { "first": 50, "every": 60, "voice": "Stack" },
-    { "first": 14, "every": 60, "voice": "Pull Small" },
-    { "first": 44, "every": 60, "voice": "Pull Hard" }
+    { "first": 14, "every": 60, "voice": "Pull" }
   ]
 }
