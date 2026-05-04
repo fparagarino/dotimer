@@ -92,9 +92,8 @@ ARROW_DELTAS = {'M': 1, 'K': -1, 'H': 60, 'P': -60}
 
 def run_timer(start):
     timers = config.get("timers", [])
-    last_fired = start - 1
+    current = start - 1
     ref = time.time()
-    offset = 0
 
     while True:
         time.sleep(0.05)
@@ -102,25 +101,24 @@ def run_timer(start):
         while msvcrt.kbhit():
             ch = msvcrt.getwch()
             if ch == '\xe0':
-                delta = ARROW_DELTAS.get(msvcrt.getwch(), 0)
-                offset += delta
-                if delta > 0:
-                    last_fired = max(last_fired, start + int(time.time() - ref) + offset)
+                ref -= ARROW_DELTAS.get(msvcrt.getwch(), 0)
 
-        display = start + int(time.time() - ref) + offset
-        while last_fired < display:
-            last_fired += 1
+        new_current = start + int(time.time() - ref)
+        if new_current < current:
+            current = new_current
+        while current < new_current:
+            current += 1
             for t in timers:
-                if should_fire(last_fired, t):
-                    print(f"\r  [{format_time(last_fired)}] {t['voice']}                ")
+                if should_fire(current, t):
+                    print(f"\r  [{format_time(current)}] {t['voice']}                ")
                     speech_queue.put(t["voice"])
                 notify = t.get("notify")
-                if notify and should_fire(last_fired + notify, t):
+                if notify and should_fire(current + notify, t):
                     unit = "second" if notify == 1 else "seconds"
                     msg = f"{t['voice']} in {notify} {unit}"
-                    print(f"\r  [{format_time(last_fired)}] {msg}                ")
+                    print(f"\r  [{format_time(current)}] {msg}                ")
                     speech_queue.put(msg)
-        print(f"\r  Running: {format_time(display)}  ", end="", flush=True)
+        print(f"\r  Running: {format_time(current)}  ", end="", flush=True)
 
 
 def main():
