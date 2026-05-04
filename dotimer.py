@@ -36,8 +36,10 @@ threading.Thread(target=speech_worker, daemon=True).start()
 
 
 def format_time(secs):
-    m, s = divmod(int(secs), 60)
-    return f"{m:02d}:{s:02d}"
+    secs = int(secs)
+    sign = '-' if secs < 0 else ''
+    m, s = divmod(abs(secs), 60)
+    return f"{sign}{m:02d}:{s:02d}"
 
 
 def input_time(prompt):
@@ -90,10 +92,22 @@ def should_fire(current, t):
 
 ARROW_DELTAS = {'M': 1, 'K': -1, 'H': 60, 'P': -60}
 
+def fire_events(current, timers):
+    for t in timers:
+        if should_fire(current, t):
+            print(f"\r  [{format_time(current)}] {t['voice']}                ")
+            speech_queue.put(t["voice"])
+        notify = t.get("notify")
+        if notify and should_fire(current + notify, t):
+            unit = "second" if notify == 1 else "seconds"
+            msg = f"{t['voice']} in {notify} {unit}"
+            print(f"\r  [{format_time(current)}] {msg}                ")
+            speech_queue.put(msg)
+
 def run_timer(start):
     timers = config.get("timers", [])
     current = start - 1
-    ref = time.time()
+    next_tick = time.time()
 
     while True:
         time.sleep(0.05)
@@ -101,23 +115,19 @@ def run_timer(start):
         while msvcrt.kbhit():
             ch = msvcrt.getwch()
             if ch == '\xe0':
-                ref -= ARROW_DELTAS.get(msvcrt.getwch(), 0)
+                delta = ARROW_DELTAS.get(msvcrt.getwch(), 0)
+                if delta > 0:
+                    for _ in range(delta):
+                        current += 1
+                        fire_events(current, timers)
+                else:
+                    current += delta
 
-        new_current = start + int(time.time() - ref)
-        if new_current < current:
-            current = new_current
-        while current < new_current:
+        while time.time() >= next_tick:
+            next_tick += 1
             current += 1
-            for t in timers:
-                if should_fire(current, t):
-                    print(f"\r  [{format_time(current)}] {t['voice']}                ")
-                    speech_queue.put(t["voice"])
-                notify = t.get("notify")
-                if notify and should_fire(current + notify, t):
-                    unit = "second" if notify == 1 else "seconds"
-                    msg = f"{t['voice']} in {notify} {unit}"
-                    print(f"\r  [{format_time(current)}] {msg}                ")
-                    speech_queue.put(msg)
+            fire_events(current, timers)
+
         print(f"\r  Running: {format_time(current)}  ", end="", flush=True)
 
 
