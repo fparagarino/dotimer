@@ -1,7 +1,22 @@
-import json, time, threading, queue, sys, subprocess, msvcrt
+import json, time, threading, queue, sys, subprocess, msvcrt, os
 
-name = sys.argv[1] if len(sys.argv) > 1 else "config"
-with open(f"{name}.json") as f:
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+def pick_config():
+    configs = sorted(f[:-5] for f in os.listdir(script_dir) if f.endswith(".json"))
+    if not configs:
+        print("  No .json configs found.")
+        sys.exit(1)
+    for i, c in enumerate(configs, 1):
+        print(f"  {i}. {c}")
+    while True:
+        choice = input("\n  Select config: ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(configs):
+            return configs[int(choice) - 1]
+
+print("\n  DoTimer\n")
+name = sys.argv[1] if len(sys.argv) > 1 else pick_config()
+with open(os.path.join(script_dir, f"{name}.json")) as f:
     config = json.load(f)
 
 
@@ -126,8 +141,6 @@ def run_timer(start):
 
 
 def main():
-    print("\n  DoTimer\n")
-
     try:
         start = input_time("  Start time: ")
         run_timer(start)
