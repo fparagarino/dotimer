@@ -115,13 +115,7 @@ def run_timer(start):
         while msvcrt.kbhit():
             ch = msvcrt.getwch()
             if ch == '\xe0':
-                delta = ARROW_DELTAS.get(msvcrt.getwch(), 0)
-                if delta > 0:
-                    for _ in range(delta):
-                        current += 1
-                        fire_events(current, timers)
-                else:
-                    current += delta
+                current += ARROW_DELTAS.get(msvcrt.getwch(), 0)
 
         while time.time() >= next_tick:
             next_tick += 1
