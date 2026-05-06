@@ -32,28 +32,39 @@ def should_fire(current, t):
     return False
 
 
+def join_voices(voices):
+    return voices[0] if len(voices) == 1 else f"{', '.join(voices[:-1])} and {voices[-1]}"
+
+
+def speak(current, msg):
+    print(f"  [{format_time(current)}] {msg}")
+    speech_queue.put(msg)
+
+
 def fire_events(current, timers):
+    main = [t["voice"] for t in timers if should_fire(current, t)]
+    if main:
+        speak(current, join_voices(main))
+
+    by_notify = {}
     for t in timers:
-        if should_fire(current, t):
-            print(f"  [{format_time(current)}] {t['voice']}")
-            speech_queue.put(t["voice"])
-        notify = t.get("notify")
-        if notify and should_fire(current + notify, t):
-            unit = "second" if notify == 1 else "seconds"
-            msg = f"{t['voice']} in {notify} {unit}"
-            print(f"  [{format_time(current)}] {msg}")
-            speech_queue.put(msg)
+        n = t.get("notify")
+        if n and should_fire(current + n, t):
+            by_notify.setdefault(n, []).append(t["voice"])
+    for n, voices in by_notify.items():
+        unit = "second" if n == 1 else "seconds"
+        speak(current, f"{join_voices(voices)} in {n} {unit}")
 
 
 def upcoming_events(current, timers, n, horizon=3600):
     events = []
     for c in range(current + 1, current + horizon + 1):
-        for t in timers:
-            if should_fire(c, t):
-                events.append((c, t["voice"]))
-        if len(events) >= n:
-            break
-    return events[:n]
+        voices = [t["voice"] for t in timers if should_fire(c, t)]
+        if voices:
+            events.append((c, voices))
+            if len(events) >= n:
+                break
+    return events
 
 
 def main():
@@ -116,6 +127,7 @@ def main():
     tk.OptionMenu(root, selected, *configs, command=on_select).pack(pady=(20, 0))
 
     font = ("Consolas", 72)
+    next_font = ("Consolas", 18)
     clock = tk.Frame(root)
     clock.pack(padx=40, pady=20)
     mins = tk.Label(clock, text="00", font=font)
@@ -145,9 +157,10 @@ def main():
         for w in next_list.winfo_children():
             w.destroy()
         active = [t for t, v in zip(timers, enabled_vars) if v.get()]
-        for fire_time, voice in upcoming_events(current, active, next_count):
+        for fire_time, voices in upcoming_events(current, active, next_count):
             delta = fire_time - current
-            tk.Label(next_list, text=f"  (in {delta}s) {format_time(fire_time)} — {voice}").pack(anchor="w")
+            text = f"  (in {delta}s) {format_time(fire_time)} — {' & '.join(voices)}"
+            tk.Label(next_list, text=text, font=next_font).pack(anchor="w")
 
     def rebuild_checkboxes():
         for w in checkbox_list.winfo_children():
