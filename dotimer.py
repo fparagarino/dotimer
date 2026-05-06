@@ -1,7 +1,5 @@
 import json, time, threading, queue, subprocess, os, tkinter as tk, keyboard
 
-START_HOTKEY = 'f9'
-
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -55,9 +53,11 @@ def main():
 
     timers = []
     rate = 3
+    hotkey = 'f9'
+    enabled_vars = []
 
     def load_config(name):
-        nonlocal timers, rate
+        nonlocal timers, rate, hotkey
         with open(os.path.join(script_dir, f"{name}.json")) as f:
             cfg = json.load(f)
         for t in cfg.get("timers", []):
@@ -65,6 +65,7 @@ def main():
                 t["at"] = parse_time(t["at"])
         timers = cfg.get("timers", [])
         rate = cfg.get("rate", 3)
+        hotkey = cfg.get("hotkey", 'f9')
 
     load_config(configs[0])
 
@@ -92,7 +93,10 @@ def main():
     root.title("DoTimer")
 
     selected = tk.StringVar(value=configs[0])
-    tk.OptionMenu(root, selected, *configs, command=load_config).pack(pady=(20, 0))
+    def on_select(name):
+        load_config(name)
+        rebuild_checkboxes()
+    tk.OptionMenu(root, selected, *configs, command=on_select).pack(pady=(20, 0))
 
     font = ("Consolas", 72)
     clock = tk.Frame(root)
@@ -103,11 +107,24 @@ def main():
     secs = tk.Label(clock, text="00", font=font)
     secs.pack(side=tk.LEFT)
 
+    checkbox_frame = tk.Frame(root)
+    checkbox_frame.pack(padx=20, pady=(0, 20), anchor="w")
+
+    def rebuild_checkboxes():
+        for w in checkbox_frame.winfo_children():
+            w.destroy()
+        enabled_vars.clear()
+        for t in timers:
+            var = tk.BooleanVar(value=True)
+            enabled_vars.append(var)
+            tk.Checkbutton(checkbox_frame, text=t["voice"], variable=var).pack(anchor="w")
+
+    rebuild_checkboxes()
+
     def update_label():
-        sign = '-' if current < 0 else ''
-        m, s = divmod(abs(current), 60)
-        mins.config(text=f"{sign}{m:02d}")
-        secs.config(text=f"{s:02d}")
+        m, _, s = format_time(current).rpartition(":")
+        mins.config(text=m)
+        secs.config(text=s)
 
     def adjust(delta):
         nonlocal current, fresh
@@ -117,26 +134,29 @@ def main():
         fresh = True
         update_label()
 
+    mins.bind("<Enter>", lambda e: mins.focus_set())
     mins.bind("<MouseWheel>", lambda e: adjust(60 if e.delta > 0 else -60))
+    secs.bind("<Enter>", lambda e: secs.focus_set())
     secs.bind("<MouseWheel>", lambda e: adjust(1 if e.delta > 0 else -1))
 
     def toggle():
         nonlocal running
         running = not running
-    keyboard.add_hotkey(START_HOTKEY, toggle)
+    keyboard.add_hotkey(hotkey, toggle)
 
     def tick():
         nonlocal current, next_tick, fresh
         if running:
+            active = [t for t, v in zip(timers, enabled_vars) if v.get()]
             if next_tick is None:
                 if fresh:
-                    fire_events(current, timers)
+                    fire_events(current, active)
                     fresh = False
                 next_tick = time.time() + 1
             while time.time() >= next_tick:
                 next_tick += 1
                 current += 1
-                fire_events(current, timers)
+                fire_events(current, active)
             update_label()
         else:
             next_tick = None
