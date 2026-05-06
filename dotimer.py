@@ -159,8 +159,7 @@ def main():
         active = [t for t, v in zip(timers, enabled_vars) if v.get()]
         for fire_time, voices in upcoming_events(current, active, next_count):
             delta = fire_time - current
-            text = f"  (in {delta}s) {format_time(fire_time)} — {' & '.join(voices)}"
-            tk.Label(next_list, text=text, font=next_font).pack(anchor="w")
+            tk.Label(next_list, text=f"  ({delta}s) {' & '.join(voices)}", font=next_font).pack(anchor="w")
 
     def rebuild_checkboxes():
         for w in checkbox_list.winfo_children():
