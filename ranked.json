@@ -2,12 +2,12 @@
   "timers": [
     { "at": "00:00", "voice": "Game Start" },
 
-    { "first": 120, "last": 240, "every": 120, "voice": "Water Rune", "notify": 15 },
-    { "every": 240, "voice": "Bounty Rune", "notify": 15 },
-    { "first": 360, "every": 120, "voice": "Power Rune", "notify": 15},
+    { "from": 120, "until": 240, "every": 120, "voice": "Water Rune", "warn": 15 },
+    { "every": 240, "voice": "Bounty Rune", "warn": 15 },
+    { "from": 360, "every": 120, "voice": "Power Rune", "warn": 15 },
 
-    { "first": 180, "every": 180, "voice": "Lotus Pool", "notify": 15 },
-    { "first": 420, "every": 420, "voice": "Wisdom Shrine", "notify": 15 },
+    { "from": 180, "every": 180, "voice": "Lotus Pool", "warn": 15 },
+    { "from": 420, "every": 420, "voice": "Wisdom Shrine", "warn": 15 },
 
     { "every": 300, "voice": "Day Night" },
 
@@ -20,7 +20,11 @@
     { "at": "37:00", "voice": "Neutral Tier 4" },
     { "at": "60:00", "voice": "Neutral Tier 5" },
 
-    { "first": 114, "every": 60, "voice": "Stack", "notify": 15},
-    { "first": 14, "every": 60, "voice": "Pull", "notify": 15 }
+    { "every": 60, "at": 55, "from": 115, "voice": "Stack Small", "warn": 15 },
+    { "every": 60, "at": 54, "from": 114, "voice": "Stack Medium", "warn": 15 },
+    { "every": 60, "at": 53, "from": 113, "voice": "Stack Hard", "warn": 15 },
+    { "every": 60, "at": 52, "from": 112, "voice": "Stack Ancient", "warn": 15 },
+    { "every": 60, "at": 15, "voice": "Pull Early", "warn": 15 },
+    { "every": 60, "at": 45, "voice": "Pull Late", "warn": 15 }
   ]
 }

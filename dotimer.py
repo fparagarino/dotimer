@@ -21,14 +21,13 @@ def format_time(secs):
 
 
 def should_fire(current, t):
-    first = t.get("first", 0)
-    if current < first:
+    if current < t.get("from", 0):
         return False
-    if "last" in t and current > t["last"]:
+    if "until" in t and current > t["until"]:
         return False
-    if "at" in t and current == t["at"]:
+    if "every" not in t and "at" in t and current == t["at"]:
         return True
-    if "every" in t and current > 0 and (current - first) % t["every"] == 0:
+    if "every" in t and current > 0 and (current - t.get("at", 0)) % t["every"] == 0:
         return True
     return False
 
@@ -47,12 +46,12 @@ def fire_events(current, timers):
     if main:
         speak(current, join_voices(main))
 
-    by_notify = {}
+    by_warn = {}
     for t in timers:
-        n = t.get("notify")
+        n = t.get("warn")
         if n and should_fire(current + n, t):
-            by_notify.setdefault(n, []).append(t["voice"])
-    for n, voices in by_notify.items():
+            by_warn.setdefault(n, []).append(t["voice"])
+    for n, voices in by_warn.items():
         unit = "second" if n == 1 else "seconds"
         speak(current, f"{join_voices(voices)} in {n} {unit}")
 
@@ -86,7 +85,7 @@ def main():
         with open(os.path.join(script_dir, f"{name}.json")) as f:
             cfg = json.load(f)
         for t in cfg.get("timers", []):
-            if "at" in t:
+            if "at" in t and isinstance(t["at"], str):
                 t["at"] = parse_time(t["at"])
         timers = cfg.get("timers", [])
         rate = cfg.get("rate", 3)
