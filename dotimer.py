@@ -21,13 +21,14 @@ def format_time(secs):
 
 
 def should_fire(current, t):
-    if current < t.get("first", 0):
+    first = t.get("first", 0)
+    if current < first:
         return False
     if "last" in t and current > t["last"]:
         return False
     if "at" in t and current == t["at"]:
         return True
-    if "every" in t and current > 0 and current % t["every"] == 0:
+    if "every" in t and current > 0 and (current - first) % t["every"] == 0:
         return True
     return False
 
