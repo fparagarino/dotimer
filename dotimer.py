@@ -55,9 +55,10 @@ def main():
     rate = 3
     hotkey = 'f9'
     enabled_vars = []
+    hotkey_handle = None
 
     def load_config(name):
-        nonlocal timers, rate, hotkey
+        nonlocal timers, rate, hotkey, hotkey_handle
         with open(os.path.join(script_dir, f"{name}.json")) as f:
             cfg = json.load(f)
         for t in cfg.get("timers", []):
@@ -66,6 +67,9 @@ def main():
         timers = cfg.get("timers", [])
         rate = cfg.get("rate", 3)
         hotkey = cfg.get("hotkey", 'f9')
+        if hotkey_handle is not None:
+            keyboard.remove_hotkey(hotkey_handle)
+            hotkey_handle = keyboard.add_hotkey(hotkey, toggle)
 
     load_config(configs[0])
 
@@ -87,7 +91,6 @@ def main():
     current = 0
     next_tick = None
     running = False
-    fresh = True
 
     root = tk.Tk()
     root.title("DoTimer")
@@ -127,11 +130,8 @@ def main():
         secs.config(text=s)
 
     def adjust(delta):
-        nonlocal current, fresh
-        if running:
-            return
+        nonlocal current
         current += delta
-        fresh = True
         update_label()
 
     mins.bind("<Enter>", lambda e: mins.focus_set())
@@ -142,16 +142,13 @@ def main():
     def toggle():
         nonlocal running
         running = not running
-    keyboard.add_hotkey(hotkey, toggle)
+    hotkey_handle = keyboard.add_hotkey(hotkey, toggle)
 
     def tick():
-        nonlocal current, next_tick, fresh
+        nonlocal current, next_tick
         if running:
             active = [t for t, v in zip(timers, enabled_vars) if v.get()]
             if next_tick is None:
-                if fresh:
-                    fire_events(current, active)
-                    fresh = False
                 next_tick = time.time() + 1
             while time.time() >= next_tick:
                 next_tick += 1
