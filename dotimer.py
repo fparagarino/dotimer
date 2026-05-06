@@ -51,10 +51,6 @@ def upcoming_events(current, timers, n, horizon=3600):
         for t in timers:
             if should_fire(c, t):
                 events.append((c, t["voice"]))
-            notify = t.get("notify")
-            if notify and should_fire(c + notify, t):
-                unit = "second" if notify == 1 else "seconds"
-                events.append((c, f"{t['voice']} in {notify} {unit}"))
         if len(events) >= n:
             break
     return events[:n]
@@ -128,14 +124,17 @@ def main():
     secs = tk.Label(clock, text="00", font=font)
     secs.pack(side=tk.LEFT)
 
-    checkbox_frame = tk.Frame(root)
-    checkbox_frame.pack(padx=20, pady=(0, 20), anchor="w")
-
     next_frame = tk.Frame(root)
     next_frame.pack(padx=20, pady=(0, 20), anchor="w")
     tk.Label(next_frame, text="Next:").pack(anchor="w")
     next_list = tk.Frame(next_frame)
     next_list.pack(anchor="w")
+
+    checkbox_frame = tk.Frame(root)
+    checkbox_frame.pack(padx=20, pady=(0, 20), anchor="w")
+    tk.Label(checkbox_frame, text="Timers:").pack(anchor="w")
+    checkbox_list = tk.Frame(checkbox_frame)
+    checkbox_list.pack(anchor="w")
 
     def update_label():
         m, _, s = format_time(current).rpartition(":")
@@ -147,16 +146,17 @@ def main():
             w.destroy()
         active = [t for t, v in zip(timers, enabled_vars) if v.get()]
         for fire_time, voice in upcoming_events(current, active, next_count):
-            tk.Label(next_list, text=f"  {format_time(fire_time)} — {voice}").pack(anchor="w")
+            delta = fire_time - current
+            tk.Label(next_list, text=f"  (in {delta}s) {format_time(fire_time)} — {voice}").pack(anchor="w")
 
     def rebuild_checkboxes():
-        for w in checkbox_frame.winfo_children():
+        for w in checkbox_list.winfo_children():
             w.destroy()
         enabled_vars.clear()
         for t in timers:
             var = tk.BooleanVar(value=True)
             enabled_vars.append(var)
-            tk.Checkbutton(checkbox_frame, text=t["voice"], variable=var, command=update_next).pack(anchor="w")
+            tk.Checkbutton(checkbox_list, text=t["voice"], variable=var, command=update_next).pack(anchor="w")
 
     rebuild_checkboxes()
     update_next()
