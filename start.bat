@@ -1,3 +1,2 @@
 @echo off
-python dotimer.py
-pause
+start "" pythonw dotimer.py
