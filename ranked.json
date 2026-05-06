@@ -2,12 +2,12 @@
   "timers": [
     { "at": "00:00", "voice": "Game Start" },
 
-    { "first": 120, "last": 240, "every": 120, "voice": "Water Rune" },
-    { "every": 240, "voice": "Bounty Rune" },
-    { "first": 360, "every": 120, "voice": "Power Rune" },
+    { "first": 120, "last": 240, "every": 120, "voice": "Water Rune", "notify": 15 },
+    { "every": 240, "voice": "Bounty Rune", "notify": 15 },
+    { "first": 360, "every": 120, "voice": "Power Rune", "notify": 15},
 
-    { "first": 180, "every": 180, "voice": "Lotus Pool" },
-    { "first": 420, "every": 420, "voice": "Wisdom Shrine" },
+    { "first": 180, "every": 180, "voice": "Lotus Pool", "notify": 15 },
+    { "first": 420, "every": 420, "voice": "Wisdom Shrine", "notify": 15 },
 
     { "every": 300, "voice": "Day Night" },
 
