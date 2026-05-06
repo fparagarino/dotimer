@@ -45,6 +45,21 @@ def fire_events(current, timers):
             speech_queue.put(msg)
 
 
+def upcoming_events(current, timers, n, horizon=3600):
+    events = []
+    for c in range(current + 1, current + horizon + 1):
+        for t in timers:
+            if should_fire(c, t):
+                events.append((c, t["voice"]))
+            notify = t.get("notify")
+            if notify and should_fire(c + notify, t):
+                unit = "second" if notify == 1 else "seconds"
+                events.append((c, f"{t['voice']} in {notify} {unit}"))
+        if len(events) >= n:
+            break
+    return events[:n]
+
+
 def main():
     configs = sorted(f[:-5] for f in os.listdir(script_dir) if f.endswith(".json"))
     if not configs:
@@ -56,9 +71,10 @@ def main():
     hotkey = 'f9'
     enabled_vars = []
     hotkey_handle = None
+    next_count = 3
 
     def load_config(name):
-        nonlocal timers, rate, hotkey, hotkey_handle
+        nonlocal timers, rate, hotkey, hotkey_handle, next_count
         with open(os.path.join(script_dir, f"{name}.json")) as f:
             cfg = json.load(f)
         for t in cfg.get("timers", []):
@@ -67,6 +83,7 @@ def main():
         timers = cfg.get("timers", [])
         rate = cfg.get("rate", 3)
         hotkey = cfg.get("hotkey", 'f9')
+        next_count = cfg.get("next", 3)
         if hotkey_handle is not None:
             keyboard.remove_hotkey(hotkey_handle)
             hotkey_handle = keyboard.add_hotkey(hotkey, toggle)
@@ -99,6 +116,7 @@ def main():
     def on_select(name):
         load_config(name)
         rebuild_checkboxes()
+        update_next()
     tk.OptionMenu(root, selected, *configs, command=on_select).pack(pady=(20, 0))
 
     font = ("Consolas", 72)
@@ -113,6 +131,24 @@ def main():
     checkbox_frame = tk.Frame(root)
     checkbox_frame.pack(padx=20, pady=(0, 20), anchor="w")
 
+    next_frame = tk.Frame(root)
+    next_frame.pack(padx=20, pady=(0, 20), anchor="w")
+    tk.Label(next_frame, text="Next:").pack(anchor="w")
+    next_list = tk.Frame(next_frame)
+    next_list.pack(anchor="w")
+
+    def update_label():
+        m, _, s = format_time(current).rpartition(":")
+        mins.config(text=m)
+        secs.config(text=s)
+
+    def update_next():
+        for w in next_list.winfo_children():
+            w.destroy()
+        active = [t for t, v in zip(timers, enabled_vars) if v.get()]
+        for fire_time, voice in upcoming_events(current, active, next_count):
+            tk.Label(next_list, text=f"  {format_time(fire_time)} — {voice}").pack(anchor="w")
+
     def rebuild_checkboxes():
         for w in checkbox_frame.winfo_children():
             w.destroy()
@@ -120,19 +156,16 @@ def main():
         for t in timers:
             var = tk.BooleanVar(value=True)
             enabled_vars.append(var)
-            tk.Checkbutton(checkbox_frame, text=t["voice"], variable=var).pack(anchor="w")
+            tk.Checkbutton(checkbox_frame, text=t["voice"], variable=var, command=update_next).pack(anchor="w")
 
     rebuild_checkboxes()
-
-    def update_label():
-        m, _, s = format_time(current).rpartition(":")
-        mins.config(text=m)
-        secs.config(text=s)
+    update_next()
 
     def adjust(delta):
         nonlocal current
         current += delta
         update_label()
+        update_next()
 
     mins.bind("<Enter>", lambda e: mins.focus_set())
     mins.bind("<MouseWheel>", lambda e: adjust(60 if e.delta > 0 else -60))
@@ -155,6 +188,7 @@ def main():
                 current += 1
                 fire_events(current, active)
             update_label()
+            update_next()
         else:
             next_tick = None
         root.after(50, tick)
