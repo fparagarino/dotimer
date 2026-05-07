@@ -120,16 +120,14 @@ def main():
     root.title("DoTimer")
 
     image_cache = {}
-    def get_image(path):
-        if not path:
-            return None
-        if path not in image_cache:
-            try:
-                full = path if os.path.isabs(path) else os.path.join(script_dir, path)
-                image_cache[path] = tk.PhotoImage(file=full)
-            except Exception:
-                image_cache[path] = None
-        return image_cache[path]
+    def get_image(voice):
+        if not voice or voice in image_cache:
+            return image_cache.get(voice)
+        try:
+            image_cache[voice] = tk.PhotoImage(file=os.path.join(script_dir, "icons", f"{voice}.png"))
+        except Exception:
+            image_cache[voice] = None
+        return image_cache[voice]
 
     selected = tk.StringVar(value=configs[0])
     def on_select(name):
@@ -174,7 +172,7 @@ def main():
             delta = fire_time - current
             text = f"  ({delta}s) {' & '.join(t['voice'] for t in firing)}"
             label = tk.Label(next_list, text=text, font=featured_font if i == 0 else next_font)
-            icon = get_image(firing[0].get("icon"))
+            icon = get_image(firing[0]["voice"])
             if icon:
                 label.config(image=icon, compound="left")
             label.pack(anchor="w", pady=(0, 8 if i == 0 else 0))
@@ -187,7 +185,7 @@ def main():
             var = tk.BooleanVar(value=True)
             enabled_vars.append(var)
             cb = tk.Checkbutton(checkbox_list, text=t["voice"], variable=var, command=update_next)
-            icon = get_image(t.get("icon"))
+            icon = get_image(t["voice"])
             if icon:
                 cb.config(image=icon, compound="left")
             cb.pack(anchor="w")
