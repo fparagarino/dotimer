@@ -24,7 +24,7 @@
     { "every": 60, "at": 54, "from": 114, "voice": "Stack Medium" },
     { "every": 60, "at": 53, "from": 113, "voice": "Stack Hard" },
     { "every": 60, "at": 52, "from": 112, "voice": "Stack Ancient" },
-    { "every": 60, "at": 15, "voice": "Pull Early" },
-    { "every": 60, "at": 45, "voice": "Pull Late" }
+    { "every": 60, "at": 15, "from": 75, "voice": "Pull Early" },
+    { "every": 60, "at": 45, "from": 105, "voice": "Pull Late" }
   ]
 }
