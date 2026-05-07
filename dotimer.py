@@ -59,9 +59,9 @@ def fire_events(current, timers):
 def upcoming_events(current, timers, n, horizon=3600):
     events = []
     for c in range(current + 1, current + horizon + 1):
-        voices = [t["voice"] for t in timers if should_fire(c, t)]
-        if voices:
-            events.append((c, voices))
+        firing = [t for t in timers if should_fire(c, t)]
+        if firing:
+            events.append((c, firing))
             if len(events) >= n:
                 break
     return events
@@ -119,6 +119,18 @@ def main():
     root = tk.Tk()
     root.title("DoTimer")
 
+    image_cache = {}
+    def get_image(path):
+        if not path:
+            return None
+        if path not in image_cache:
+            try:
+                full = path if os.path.isabs(path) else os.path.join(script_dir, path)
+                image_cache[path] = tk.PhotoImage(file=full)
+            except Exception:
+                image_cache[path] = None
+        return image_cache[path]
+
     selected = tk.StringVar(value=configs[0])
     def on_select(name):
         load_config(name)
@@ -128,6 +140,7 @@ def main():
 
     font = ("Consolas", 72)
     next_font = ("Consolas", 18)
+    featured_font = ("Consolas", 28)
     clock = tk.Frame(root)
     clock.pack(padx=40, pady=20)
     mins = tk.Label(clock, text="00", font=font)
@@ -157,9 +170,14 @@ def main():
         for w in next_list.winfo_children():
             w.destroy()
         active = [t for t, v in zip(timers, enabled_vars) if v.get()]
-        for fire_time, voices in upcoming_events(current, active, next_count):
+        for i, (fire_time, firing) in enumerate(upcoming_events(current, active, next_count)):
             delta = fire_time - current
-            tk.Label(next_list, text=f"  ({delta}s) {' & '.join(voices)}", font=next_font).pack(anchor="w")
+            text = f"  ({delta}s) {' & '.join(t['voice'] for t in firing)}"
+            label = tk.Label(next_list, text=text, font=featured_font if i == 0 else next_font)
+            icon = get_image(firing[0].get("icon"))
+            if icon:
+                label.config(image=icon, compound="left")
+            label.pack(anchor="w", pady=(0, 8 if i == 0 else 0))
 
     def rebuild_checkboxes():
         for w in checkbox_list.winfo_children():
@@ -168,7 +186,11 @@ def main():
         for t in timers:
             var = tk.BooleanVar(value=True)
             enabled_vars.append(var)
-            tk.Checkbutton(checkbox_list, text=t["voice"], variable=var, command=update_next).pack(anchor="w")
+            cb = tk.Checkbutton(checkbox_list, text=t["voice"], variable=var, command=update_next)
+            icon = get_image(t.get("icon"))
+            if icon:
+                cb.config(image=icon, compound="left")
+            cb.pack(anchor="w")
 
     rebuild_checkboxes()
     update_next()
